@@ -1,0 +1,62 @@
+{
+  "name": "fuma-comment-github-discussions",
+  "version": "0.1.0",
+  "description": "Store fuma-comment comments in GitHub Discussions — a storage + auth adapter so a fuma-comment UI is backed by GitHub Discussions (readers sign in with their own GitHub account), no database required.",
+  "keywords": [
+    "fuma-comment",
+    "fumadocs",
+    "comments",
+    "github-discussions",
+    "giscus",
+    "next"
+  ],
+  "license": "MIT",
+  "author": "Quixomatic",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Quixomatic/fuma-comment-github-discussions"
+  },
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./next": {
+      "types": "./dist/next.d.ts",
+      "import": "./dist/next.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "check-types": "tsc --noEmit",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "marked": "^14.1.4"
+  },
+  "peerDependencies": {
+    "@fuma-comment/server": "^1.5.0",
+    "next": ">=14.0.0"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@fuma-comment/server": "^1.5.1",
+    "@types/node": "^22.13.14",
+    "next": "^16.3.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  }
+}
