@@ -53,71 +53,129 @@ the browser (the fuma-comment UI talks to your same-origin routes, not GitHub di
 ## Install
 
 ```bash
-npm i fuma-comment-github-discussions @fuma-comment/react @fuma-comment/server
+npm i fuma-comment-github-discussions @fuma-comment/react @fuma-comment/server lucide-react
 ```
 
-`@fuma-comment/server` is a peer dependency (it provides the adapter interfaces and the framework binding).
+`@fuma-comment/server` is a peer dependency (it provides the adapter interfaces and the framework
+binding). `lucide-react` is an optional peer of `@fuma-comment/react`, but its widget imports icons
+from it, so install it unless it's already in your app.
 
-## Usage (Next.js App Router)
+## Full setup (Next.js App Router)
 
-**1. The comment API** — mount fuma-comment's `NextComment` on a catch-all and spread in the adapter:
+Beyond `npm i` and env, this is everything you add — five small files plus a CSS block. A ready-to-copy
+version of all of them is in [`examples/nextjs`](./examples/nextjs). The `process.env.*` names below are
+arbitrary: **the package takes plain values, not env vars** — source them however you like.
+
+**1. Config glue** — read env once, build the adapter + OAuth routes so the handlers stay one-liners:
 
 ```ts
-// app/api/comments/[[...comment]]/route.ts
-import { NextComment } from "@fuma-comment/server/next";
+// lib/comments.ts  (server only)
 import { githubDiscussions } from "fuma-comment-github-discussions";
-
-export const { GET, POST, PATCH, DELETE } = NextComment({
-  role: "database", // route role lookups through storage.getRole so ownerLogins can moderate
-  ...githubDiscussions({
-    repo: "you/repo",
-    repoId: process.env.GH_REPO_ID!,        // R_...
-    categoryId: process.env.GH_CATEGORY_ID!, // DIC_...
-    category: "Blog Posts",                  // category NAME (scopes the search)
-    ownerLogins: ["you"],                    // may delete any comment
-    readToken: process.env.GH_READ_TOKEN,    // anonymous reads + new threads
-    tokenSecret: process.env.COMMENTS_SECRET!, // must match the OAuth routes
-    pageToUrl: (page) => `https://you.dev/blog/${page}`,
-  }),
-});
-```
-
-**2. The sign-in flow** — the optional reference OAuth routes (skip these if you already have GitHub auth;
-just provide your own cookie and point `tokenSecret`/`cookieName` at it):
-
-```ts
-// app/api/comments/oauth/login/route.ts   (and callback/route.ts, logout/route.ts)
 import { createOAuthRoutes } from "fuma-comment-github-discussions/next";
 
-const oauth = createOAuthRoutes({
-  clientId: process.env.GH_CLIENT_ID!,
-  clientSecret: process.env.GH_CLIENT_SECRET!,
-  tokenSecret: process.env.COMMENTS_SECRET!,
-  callbackPath: "/api/comments/oauth/callback",
-});
+const COOKIE_NAME = "gh_comment_token";
+const tokenSecret = () => process.env.COMMENTS_TOKEN_SECRET ?? "";
 
-export const GET = oauth.login; // in callback/route.ts use oauth.callback; in logout/route.ts oauth.logout
+export const commentsEnabled = () =>
+  Boolean(process.env.GITHUB_COMMENTS_CLIENT_ID && process.env.GITHUB_COMMENTS_REPO_ID && process.env.GITHUB_COMMENTS_CATEGORY_ID && tokenSecret());
+
+export const commentsAdapter = () =>
+  githubDiscussions({
+    repo: process.env.GITHUB_COMMENTS_REPO!,               // "owner/name"
+    repoId: process.env.GITHUB_COMMENTS_REPO_ID!,          // R_...
+    categoryId: process.env.GITHUB_COMMENTS_CATEGORY_ID!,  // DIC_...
+    category: process.env.GITHUB_COMMENTS_CATEGORY,        // category NAME (scopes the search)
+    ownerLogins: process.env.GITHUB_COMMENTS_OWNER_LOGIN ? [process.env.GITHUB_COMMENTS_OWNER_LOGIN] : [],
+    readToken: process.env.GITHUB_COMMENTS_READ_TOKEN,     // anonymous reads + opening threads
+    tokenSecret: tokenSecret(),
+    cookieName: COOKIE_NAME,
+    pageToUrl: (page) => `https://you.dev/blog/${page}`,
+  });
+
+export const commentsOAuth = () =>
+  createOAuthRoutes({
+    clientId: process.env.GITHUB_COMMENTS_CLIENT_ID!,
+    clientSecret: process.env.GITHUB_COMMENTS_CLIENT_SECRET!,
+    tokenSecret: tokenSecret(),
+    cookieName: COOKIE_NAME,
+    callbackPath: "/api/comments/oauth/callback",
+  });
 ```
 
-These sit under the same `/api/comments` prefix as the catch-all, but a static route
-(`oauth/login`) always beats a catch-all in Next, so there's no conflict.
+**2. The comment API** — mount fuma-comment's `NextComment` on a catch-all:
 
-**3. The widget** — a client component, with a sign-in that hits the login route:
+```ts
+// app/api/comments/[...comment]/route.ts
+import { NextComment } from "@fuma-comment/server/next";
+import { commentsAdapter } from "@/lib/comments";
+
+export const { GET, POST, PATCH, DELETE } = NextComment({
+  role: "database", // route moderation through the adapter's getRole so ownerLogins can delete any
+  ...commentsAdapter(),
+});
+```
+
+> ⚠️ Use the **required** catch-all `[...comment]`, not the optional `[[...comment]]` — Next's route
+> validator rejects the optional form against fuma-comment's handler types.
+
+**3. The sign-in routes** — three one-liners (skip if you already have GitHub auth + a token cookie):
+
+```ts
+// app/api/comments/oauth/login/route.ts
+import { commentsOAuth } from "@/lib/comments";
+export const GET = commentsOAuth().login;
+
+// app/api/comments/oauth/callback/route.ts  ->  export const GET = commentsOAuth().callback;
+// app/api/comments/oauth/logout/route.ts    ->  export const GET = commentsOAuth().logout;
+```
+
+These sit under the same `/api/comments` prefix as the catch-all, but a static route always beats a
+catch-all in Next, so there's no conflict.
+
+**4. The widget** — a client component whose sign-in hits the login route:
 
 ```tsx
+// components/comments.tsx
 "use client";
 import { Comments } from "@fuma-comment/react";
-import "@fuma-comment/react/style.css";
 
-export function BlogComments({ slug }: { slug: string }) {
+export function CommentSection({ page }: { page: string }) {
   const signIn = () => {
     window.location.href = `/api/comments/oauth/login?return=${encodeURIComponent(location.href)}`;
   };
-  return <Comments page={slug} apiUrl="/api/comments" auth={{ type: "api", signIn }} />;
+  return (
+    <div className="comments-theme">
+      <Comments page={page} apiUrl="/api/comments" auth={{ type: "api", signIn }} />
+    </div>
+  );
 }
 ```
 
-Theme it by overriding fuma-comment's `--color-fc-*` CSS variables on a wrapper.
+Mount it on your page: `{commentsEnabled() ? <CommentSection page={slug} /> : null}`. (See
+`examples/nextjs` for a version with a sign-in/sign-out header that keeps the page statically rendered.)
+
+**5. Styles** — load fuma-comment's CSS and theme it. With **Tailwind v4**, use the preset (one build,
+one preflight); without Tailwind, import the prebuilt `@fuma-comment/react/style.css` instead.
+
+```css
+/* globals.css */
+@import "tailwindcss";
+@import "@fuma-comment/react/preset.css";
+@source "../node_modules/@fuma-comment/react/dist/**/*.js";
+
+/* Theme: override the fc-* variables on your wrapper (map to your own tokens, or set values). */
+.comments-theme {
+  --color-fc-background: #0b1120;
+  --color-fc-foreground: #f1f5f9;
+  --color-fc-border: rgba(148, 163, 184, 0.14);
+  --color-fc-primary: #4a9fe0;
+  --color-fc-primary-foreground: #08111f;
+  /* …the rest: fc-muted(-foreground), fc-popover(-foreground), fc-card(-foreground), fc-accent(-foreground), fc-ring */
+}
+```
+
+> ⚠️ Use the **preset**, not the prebuilt `style.css`, when you already run Tailwind — importing the
+> compiled stylesheet adds a second Tailwind preflight that can clobber your site's base styles.
 
 ## Config
 

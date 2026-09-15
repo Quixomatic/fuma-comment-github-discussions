@@ -2,6 +2,21 @@
 
 All notable changes to fuma-comment-github-discussions are documented here.
 
+## [1.0.0] - 2026-09-14
+
+Stable release. Proven in production on getairwave.tv and validated by the runnable demo; the adapter
+API is considered stable.
+
+### Added
+- A copy-paste "Full setup (Next.js App Router)" guide in the README.
+- A runnable `examples/nextjs` demo app (deployable to Vercel) that stands up a comment page against
+  any repo + Discussions category you configure.
+
+### Docs
+- Documented that `lucide-react` must be installed alongside `@fuma-comment/react` — its widget imports
+  icons from it, even though fuma-comment marks it an optional peer (a fresh consumer build fails without
+  it).
+
 ## [0.1.0] - 2026-09-14
 
 Initial release — a GitHub Discussions backend for fuma-comment.

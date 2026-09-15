@@ -1,6 +1,6 @@
 {
   "name": "fuma-comment-github-discussions",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Store fuma-comment comments in GitHub Discussions — a storage + auth adapter so a fuma-comment UI is backed by GitHub Discussions (readers sign in with their own GitHub account), no database required.",
   "keywords": [
     "fuma-comment",
