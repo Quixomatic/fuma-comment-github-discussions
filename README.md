@@ -7,17 +7,18 @@ GitHub Discussions on a public repo. Readers sign in with **their own GitHub acc
 reply, and react; each page's thread is one Discussion. GitHub owns the data, moderation, and
 spam/auth — **no database, no separate auth system.**
 
-Think of it as *giscus's backend with fuma-comment's UI*: the modern, themeable, fumadocs-native
-widget instead of an iframe, but the comments still live in your repo's Discussions.
+The widget is the themeable, fumadocs-native fuma-comment UI, and the comments live as Discussions in
+your own repo.
+
+**Live demo:** https://fuma-comment-github-discussions.vercel.app/
 
 > Extracted from a production integration on [getairwave.tv](https://getairwave.tv). MIT licensed.
 
 ## Why
 
-- **Plain giscus** does the GitHub-Discussions-as-comments job, but its UI is an iframe you can't theme.
-- **Plain fuma-comment** has a great, themeable UI, but wants its own database + auth layer.
-- **This** drives fuma-comment's UI with a GitHub Discussions storage adapter: the look of the former,
-  the store/moderation/identity of the latter.
+fuma-comment has a great, themeable UI but wants its own database and auth layer. This adapter backs that
+UI with GitHub Discussions instead, so GitHub is the store, the moderation, and the identity, and there's
+no database to run or auth to build.
 
 ## How it works
 
