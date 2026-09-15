@@ -11,7 +11,7 @@
   "dependencies": {
     "@fuma-comment/react": "^1.5.1",
     "@fuma-comment/server": "^1.5.1",
-    "fuma-comment-github-discussions": "latest",
+    "fuma-comment-github-discussions": "1.1.1",
     "lucide-react": "^1.0.0",
     "next": "^16.2.0",
     "react": "^19.2.0",
