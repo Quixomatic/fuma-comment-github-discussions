@@ -62,6 +62,7 @@ export function CommentSection({ page }: { page: string }) {
       page={page}
       apiUrl="/api/comments"
       auth={{ type: "api", signIn }}
+      mention={{ enabled: true }}
       title={header}
       className="w-full max-w-[800px]"
     />

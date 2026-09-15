@@ -11,5 +11,6 @@ import { commentsAdapter } from "@/lib/comments";
  */
 export const { GET, POST, PATCH, DELETE } = NextComment({
   role: "database", // route moderation through the adapter's getRole so ownerLogins can delete any
+  mention: { enabled: true }, // @mention autocomplete via the adapter's queryUsers (mentionableUsers)
   ...commentsAdapter(),
 });

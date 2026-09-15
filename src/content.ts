@@ -85,6 +85,25 @@ function withMark(
   return nodes.map((n) => (n.type === "text" ? { ...n, marks: [...(n.marks ?? []), mark] } : n));
 }
 
+// A GitHub @mention: preceded by start/whitespace/"(" (so emails like a@b don't match), a valid-ish
+// login (alphanumeric with single interior hyphens, no leading/trailing hyphen).
+const MENTION_RE = /(?<=^|[\s(])@([a-zA-Z\d](?:-?[a-zA-Z\d]){0,38})/g;
+
+/** Split a plain string into text + mention nodes, so `@login` renders as a styled mention chip. */
+function splitMentions(value: string): JSONContent[] {
+  const out: JSONContent[] = [];
+  let last = 0;
+  let m: RegExpExecArray | null;
+  MENTION_RE.lastIndex = 0;
+  while ((m = MENTION_RE.exec(value)) !== null) {
+    if (m.index > last) out.push(text(value.slice(last, m.index)));
+    out.push({ type: "mention", attrs: { id: m[1], label: m[1] } });
+    last = m.index + m[0].length;
+  }
+  if (last < value.length) out.push(text(value.slice(last)));
+  return out.length ? out : [text(value)];
+}
+
 function inlineFromTokens(tokens: Token[] | undefined): JSONContent[] {
   const out: JSONContent[] = [];
   for (const tok of tokens ?? []) {
@@ -92,7 +111,7 @@ function inlineFromTokens(tokens: Token[] | undefined): JSONContent[] {
       case "text": {
         const t = tok as Tokens.Text;
         if (t.tokens && t.tokens.length) out.push(...inlineFromTokens(t.tokens));
-        else out.push(text(t.text));
+        else out.push(...splitMentions(t.text));
         break;
       }
       case "escape":
@@ -148,7 +167,7 @@ function blocksFromTokens(tokens: Token[]): JSONContent[] {
         break;
       case "text": {
         const t = tok as Tokens.Text;
-        out.push(paragraph(t.tokens ? inlineFromTokens(t.tokens) : [text(t.text)]));
+        out.push(paragraph(t.tokens ? inlineFromTokens(t.tokens) : splitMentions(t.text)));
         break;
       }
       case "code": {

@@ -147,6 +147,22 @@ const COMMENT_AUTHOR = /* GraphQL */ `
   }
 `;
 
+const MENTIONABLE_USERS = /* GraphQL */ `
+  query ($owner: String!, $name: String!, $query: String!, $first: Int!) {
+    repository(owner: $owner, name: $name) {
+      mentionableUsers(first: $first, query: $query) {
+        nodes { login name avatarUrl }
+      }
+    }
+  }
+`;
+
+export interface GMentionableUser {
+  login: string;
+  name: string | null;
+  avatarUrl: string;
+}
+
 export type ReactionContent = "THUMBS_UP" | "THUMBS_DOWN";
 
 export function createGitHubClient(cfg: {
@@ -155,6 +171,7 @@ export function createGitHubClient(cfg: {
   categoryId: string;
   category?: string;
 }) {
+  const [owner = "", name = ""] = cfg.repo.split("/");
   /** Find the discussion whose title exactly equals `term` (search is fuzzy, so match exactly). */
   async function findDiscussion(term: string, token: string): Promise<GDiscussion | null> {
     const repo = cfg.repo.toLowerCase();
@@ -236,6 +253,20 @@ export function createGitHubClient(cfg: {
     return data.node?.author?.login ?? null;
   }
 
+  /** Users mentionable in the repo (collaborators + participants) matching `query` — for @mention autocomplete. */
+  async function mentionableUsers(
+    query: string,
+    first: number,
+    token: string,
+  ): Promise<GMentionableUser[]> {
+    const data = await gql<{ repository: { mentionableUsers: { nodes: GMentionableUser[] } } | null }>(
+      MENTIONABLE_USERS,
+      { owner, name, query, first },
+      token,
+    );
+    return data.repository?.mentionableUsers.nodes ?? [];
+  }
+
   return {
     findDiscussion,
     createDiscussion,
@@ -246,6 +277,7 @@ export function createGitHubClient(cfg: {
     getViewerLogin,
     getViewerReactions,
     getCommentAuthor,
+    mentionableUsers,
   };
 }
 

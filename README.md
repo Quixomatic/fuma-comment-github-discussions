@@ -201,8 +201,10 @@ one preflight); without Tailwind, import the prebuilt `@fuma-comment/react/style
 - **Rich content** — bold / italic / strike / inline-code / links / code blocks / images round-trip;
   richer Markdown authored directly on GitHub (headings, lists, quotes) degrades to paragraphs so nothing
   is lost when rendering.
-- **Mentions** — the mention autocomplete is not wired (GitHub has no cheap "users on this thread" query);
-  typing `@name` still posts and GitHub auto-links real users.
+- **Mentions** — `@mention` autocomplete is supported. Opt in by passing `mention: { enabled: true }`
+  to `NextComment` (server) **and** to `<Comments>` (client). Suggestions come from GitHub's
+  `repository.mentionableUsers(query:)` via the adapter's `queryUsers` (uses `readToken`), and posted
+  `@login`s auto-link on GitHub. On display, `@login` in a comment renders as a styled mention.
 - **Bring your own auth** — the OAuth routes are a convenience. If you already have the reader's GitHub
   token, set a cookie yourself (or use `readTokenFromCookieHeader`) and skip `/next`.
 

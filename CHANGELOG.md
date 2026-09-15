@@ -2,6 +2,18 @@
 
 All notable changes to fuma-comment-github-discussions are documented here.
 
+## [1.1.0] - 2026-09-14
+
+`@mention` autocomplete.
+
+### Added
+- `@mention` support. `storage.queryUsers` now backs fuma-comment's mention autocomplete using GitHub's
+  `repository.mentionableUsers(query:)` (exposed as `mentionableUsers` on the low-level client). Enable it
+  by passing `mention: { enabled: true }` to both `NextComment` (server) and `<Comments>` (client).
+  Posted `@login`s auto-link on GitHub, and `@login` in a comment now renders as a styled mention chip on
+  read (conservative detection that ignores emails and mid-word `@`).
+- The `examples/nextjs` demo enables mentions.
+
 ## [1.0.0] - 2026-09-14
 
 Stable release. Proven in production on getairwave.tv and validated by the runnable demo; the adapter

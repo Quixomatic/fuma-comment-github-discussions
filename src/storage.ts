@@ -113,5 +113,13 @@ export function createStorage(config: GitHubDiscussionsConfig, client?: GitHubCl
       const isOwner = owners.includes(auth.id.toLowerCase());
       return isOwner ? { name: "maintainer", canDelete: true } : null;
     },
+
+    async queryUsers({ name, limit }) {
+      // @mention autocomplete. Uses the server token; enable it with `mention: { enabled: true }` on
+      // NextComment. `id` is the login so the posted `@login` auto-links on GitHub.
+      if (!config.readToken || !name) return [];
+      const users = await gh.mentionableUsers(name, limit, config.readToken);
+      return users.map((u) => ({ id: u.login, name: u.name || u.login, image: u.avatarUrl }));
+    },
   };
 }
