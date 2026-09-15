@@ -119,7 +119,9 @@ export function createStorage(config: GitHubDiscussionsConfig, client?: GitHubCl
       // NextComment. `id` is the login so the posted `@login` auto-links on GitHub.
       if (!config.readToken || !name) return [];
       const users = await gh.mentionableUsers(name, limit, config.readToken);
-      return users.map((u) => ({ id: u.login, name: u.name || u.login, image: u.avatarUrl }));
+      // Label the suggestion with the login (what GitHub inserts + links), so the picked chip matches
+      // what gets posted. `id` is the login too, which the content serializer writes as `@login`.
+      return users.map((u) => ({ id: u.login, name: u.login, image: u.avatarUrl }));
     },
   };
 }

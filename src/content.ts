@@ -36,8 +36,9 @@ function inlineToMarkdown(node: JSONContent): string {
     return text;
   }
   if (node.type === "mention") {
+    // The mention's `id` is the GitHub login — that's what GitHub links, NOT the display-name label.
     const a = node.attrs ?? {};
-    return `@${(a.label as string) ?? (a.id as string) ?? ""}`;
+    return `@${(a.id as string) ?? (a.label as string) ?? ""}`;
   }
   if (node.type === "image") {
     const a = node.attrs ?? {};

@@ -2,6 +2,14 @@
 
 All notable changes to fuma-comment-github-discussions are documented here.
 
+## [1.1.1] - 2026-09-14
+
+### Fixed
+- `@mention`s are now stored with the GitHub **login**, not the display name. The mention node's `id`
+  (the login) is written to Markdown as `@login`, so GitHub links the correct account; previously the
+  display-name label was serialized (e.g. `@James Freund`), which GitHub mis-parsed as `@James`. The
+  autocomplete suggestion is now labeled with the login too, so the picked chip matches what's posted.
+
 ## [1.1.0] - 2026-09-14
 
 `@mention` autocomplete.
